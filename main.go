@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 func main() {
-	runViper()
+	fmt.Println("Hello world!")
 }
