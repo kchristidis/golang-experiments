@@ -7,37 +7,43 @@ import (
 
 // first stage
 func gen(nums ...int) <-chan int {
-	out := make(chan int)
-	go func() {
-		for _, n := range nums {
-			out <- n
-		}
-		close(out)
-	}()
+	out := make(chan int, len(nums))
+	for _, n := range nums {
+		out <- n
+	}
+	close(out)
 	return out
 }
 
 // second stage
-func sq(in <-chan int) <-chan int {
+func sq(done <-chan struct{}, in <-chan int) <-chan int {
 	out := make(chan int)
 	go func() {
+		defer close(out)
 		for n := range in {
-			out <- n * n
+			select {
+			case out <- n * n:
+			case <-done:
+				return
+			}
 		}
-		close(out)
 	}()
 	return out
 }
 
-func merge(cs ...<-chan int) <-chan int {
+func merge(done <-chan struct{}, cs ...<-chan int) <-chan int {
 	var wg sync.WaitGroup
 	out := make(chan int)
 
 	output := func(c <-chan int) {
+		defer wg.Done()
 		for n := range c {
-			out <- n
+			select {
+			case out <- n:
+			case <-done:
+				return
+			}
 		}
-		wg.Done()
 	}
 
 	wg.Add(len(cs))
@@ -55,23 +61,14 @@ func merge(cs ...<-chan int) <-chan int {
 
 // main
 func runPipeline() {
-	/* c := gen(2, 3)
-	out := sq(c)
-	fmt.Println(<-out)
-	fmt.Println(<-out) */
-
-	/* for n := range sq(sq(gen(2, 3))) {
-		fmt.Println(n)
-	} */
+	done := make(chan struct{})
+	defer close(done)
 
 	in := gen(2, 3)
+	c1 := sq(done, in)
+	c2 := sq(done, in)
 
-	// distribute the sq work across two goroutines that both read from in
-	c1 := sq(in)
-	c2 := sq(in)
-
-	// consume the merged output from c1 and c2
-	for n := range merge(c1, c2) {
-		fmt.Println(n)
-	}
+	out := merge(done, c1, c2)
+	fmt.Println(<-out)
+	// fmt.Println(<-out)
 }
