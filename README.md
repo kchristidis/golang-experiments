@@ -4,4 +4,4 @@ The [Go Playground](https://play.golang.org/) is a wonderful tool, but of limite
 
 This repo hosts minimal, complete, and verifiable working examples for the various packages and behaviors I'm testing out.
 
-These are added as separate branches.
+The examples are added as separate branches.
