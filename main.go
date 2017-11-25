@@ -1,7 +1,22 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"path/filepath"
+)
 
 func main() {
-	fmt.Println("Hello world!")
+	f, err := ioutil.TempFile("", "foo.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("f.Name():", f.Name())
+	fmt.Println("filepath.Dir(f.Name()):", filepath.Dir(f.Name()))
+	a, err := filepath.Abs(filepath.Dir(f.Name()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("filepath.Abs(filepath.Dir(f.Name())):", a)
 }
